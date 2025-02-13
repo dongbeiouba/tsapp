@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
     tags:
       - '*'
+    inputs:
+      version:
+        description: 'tsapp version'
+        required: true
+        type: string
 env:
   TONGSUO_VERSION: 8.4.0
 
@@ -63,8 +68,8 @@ jobs:
 
       - name: package for macos
         run: |
-          macdeployqt tsapp.app -qmldir=. -verbose=1 -dmg
-        if: ${{ matrix.os == 'macos-latest' }}
+          macdeployqt ${RUNNER_TEMP}/tsapp/tsapp.app -verbose=1 -dmg
+        if: ${{ runner.os == 'macOS' }}
 
       - name: upload artifact for macos
         uses: actions/upload-release-asset@v1
@@ -72,10 +77,10 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.new_release.outputs.upload_url }}
-          asset_path: tsapp.dmg
-          asset_name: tsapp-${{ runner.os }}.dmg
+          asset_path: ${{ runner.temp }}/tsapp/tsapp.dmg
+          asset_name: tsapp-${{ runner.os }}-${{ runner.arch }}-${{ inputs.version }}.dmg
           asset_content_type: application/octet-stream
-        if: ${{ matrix.os == 'macos-latest' }}
+        if: ${{ runner.os == 'macOS' }}
 
       - name: install linuxdeployqt and package for linux
         run: |
@@ -88,7 +93,7 @@ jobs:
           linuxdeployqt tsapp -appimage -no-copy-copyright-files -no-plugins -no-translations  || echo
           cd ..
           tar czf tsapp.tgz tsapp
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ runner.os == 'Linux' }}
 
       - name: upload artifact for linux
         uses: actions/upload-release-asset@v1
@@ -97,9 +102,9 @@ jobs:
         with:
           upload_url: ${{ needs.new_release.outputs.upload_url }}
           asset_path:  ${{ runner.temp }}/Install/tsapp.tgz
-          asset_name: tsapp-${{ runner.os }}.tgz
+          asset_name: tsapp-${{ runner.os }}-${{ runner.arch }}-${{ inputs.version }}.tgz
           asset_content_type: application/x-compressed-tar
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ runner.os == 'Linux' }}
 
   build_windows:
     runs-on: windows-latest
@@ -164,6 +169,6 @@ jobs:
         with:
           upload_url: ${{ needs.new_release.outputs.upload_url }}
           asset_path: ${{ github.workspace }}\tsapp.zip
-          asset_name: tsapp-${{ runner.os }}.zip
+          asset_name: tsapp-${{ runner.os }}-${{ runner.arch }}-${{ inputs.version }}.zip
           asset_content_type: application/zip
 
